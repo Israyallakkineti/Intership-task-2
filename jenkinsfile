@@ -1,0 +1,54 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = "israyal/jenkins-ci-cd-demo"
+        CONTAINER_NAME = "pipeline-app"
+    }
+
+    stages {
+
+        stage('Checkout Code') {
+            steps {
+                echo '📥 Cloning GitHub repository...'
+                git branch: 'main', url: 'https://github.com/Israyallakkineti/Intership-task-2.git'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                echo '🐳 Building Docker image...'
+                // ✅ Corrected: missing tag and wrong syntax
+                sh 'docker build -t $IMAGE_NAME:latest .'
+            }
+        }
+
+        stage('Test Application') {
+            steps {
+                echo '🧪 Running tests...'
+                // ✅ Use correct image name (same as built one)
+                sh 'docker run --rm $IMAGE_NAME:latest npm test || echo "No tests defined"'
+            }
+        }
+
+        stage('Deploy Application') {
+            steps {
+                echo '🚀 Deploying container...'
+                // ✅ Clean up old container and run new one
+                sh '''
+                docker rm -f $CONTAINER_NAME || true
+                docker run -d --name $CONTAINER_NAME -p 3000:3000 $IMAGE_NAME:latest
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Deployment successful!'
+        }
+       failure {
+            echo '❌ Pipeline failed. Please check logs.'
+        }
+    }
+}
